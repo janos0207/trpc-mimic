@@ -1,20 +1,17 @@
 import { z } from "zod";
 import { createRouter } from "./router";
-import { procedure } from "./procedure";
 
-const router = createRouter().procedure("hello", {
-  input: z.object({ name: z.string() }),
-  resolve: ({ input }) => `Hello, ${input.name}!`,
-});
-
-const result = router.call("hello", { name: "Janos" });
-console.log(result);
-
-const echo = procedure()
-  .input(z.object({ text: z.string() }))
-  .query(({ input }) => {
-    return { echoed: input.text };
+const router = createRouter()
+  .procedure("hello", {
+    input: z.object({ name: z.string() }),
+    resolve: ({ input }) => `Hello, ${input.name}!`,
+  })
+  .procedure("add", {
+    input: z.object({ x: z.number(), y: z.number() }),
+    resolve: ({ input }) => input.x + input.y,
   });
 
-const result2 = echo.call({ text: "Hello Janos!" });
-console.log(result2);
+const result = router.call("hello", { name: "Yasu" });
+console.log(result);
+console.log(router.call("add", { x: 1, y: 2 }));
+// router.call("unknown", {});  // Type Error

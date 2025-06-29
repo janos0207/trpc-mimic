@@ -1,28 +1,49 @@
 import { z, ZodTypeAny } from "zod";
 
-type ProcedureDef = {
+type ProcedureDef<TInput = any, TOutput = any> = {
   input: ZodTypeAny;
-  resolve: (args: { input: any }) => any;
+  resolve: (args: { input: TInput }) => TOutput;
 };
 
-type Router = {
-  procedure: (name: string, def: ProcedureDef) => Router;
-  call: (name: string, input: any) => any;
+type ProcedureMap = Record<string, ProcedureDef>;
+
+type Router<P extends ProcedureMap> = {
+  procedure: <K extends string, D extends ProcedureDef>(
+    name: K,
+    def: D
+  ) => Router<P & { [Key in K]: D }>;
+  call: <K extends keyof P>(
+    name: K,
+    input: unknown
+  ) => ReturnType<P[K]["resolve"]>;
 };
 
-export function createRouter(): Router {
-  const procedures: Record<string, ProcedureDef> = {};
-
+function createRouterWith<P extends Record<string, ProcedureDef>>(
+  procedures: P
+): Router<P> {
   return {
-    procedure(name, def) {
-      procedures[name] = def;
-      return this;
+    procedure<Name extends keyof P, Def extends ProcedureDef>(
+      name: Name,
+      def: Def
+    ): Router<P & { [K in Name]: Def }> {
+      const next_procedures = {
+        ...procedures,
+        [name]: def,
+      } as P & { [K in Name]: Def };
+      return createRouterWith(next_procedures);
     },
-    call(name, input) {
+    call<K extends keyof P>(
+      name: K,
+      input: Parameters<P[K]["resolve"]>[0]["input"]
+    ): ReturnType<P[K]["resolve"]> {
       const proc = procedures[name];
-      if (!proc) throw new Error(`Procedure "${name}" not found`);
+      if (!proc) throw new Error(`Procedure "${String(name)}" not found`);
       const parsedInput = proc.input.parse(input);
       return proc.resolve({ input: parsedInput });
     },
   };
+}
+
+export function createRouter(): Router<{}> {
+  return createRouterWith<{}>({});
 }
