@@ -1,15 +1,20 @@
 import { z } from "zod";
 import { createRouter } from "./router";
+import { procedure } from "./procedure";
 
 const router = createRouter()
-  .procedure("hello", {
-    input: z.object({ name: z.string() }),
-    resolve: ({ input }) => `Hello, ${input.name}!`,
-  })
-  .procedure("add", {
-    input: z.object({ x: z.number(), y: z.number() }),
-    resolve: ({ input }) => input.x + input.y,
-  });
+  .procedure(
+    "hello",
+    procedure()
+      .input(z.object({ name: z.string() }))
+      .query(({ input }) => `Hello, ${input.name}!`)
+  )
+  .procedure(
+    "add",
+    procedure()
+      .input(z.object({ x: z.number(), y: z.number() }))
+      .mutation(({ input }) => input.x + input.y)
+  );
 
 const result = router.call("hello", { name: "Yasu" });
 console.log(result);

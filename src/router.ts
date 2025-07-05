@@ -1,8 +1,9 @@
 import { z, ZodTypeAny } from "zod";
 
-type ProcedureDef<TInput = any, TOutput = any> = {
+export type ProcedureDef<TInput = any, TOutput = any> = {
   input: ZodTypeAny;
   resolve: (args: { input: TInput }) => TOutput;
+  type: "query" | "mutation";
 };
 
 type ProcedureMap = Record<string, ProcedureDef>;
@@ -38,6 +39,8 @@ function createRouterWith<P extends Record<string, ProcedureDef>>(
     ): ReturnType<P[K]["resolve"]> {
       const proc = procedures[name];
       if (!proc) throw new Error(`Procedure "${String(name)}" not found`);
+      console.log(`Calling [${proc.type}] procedure: ${String(name)}`);
+
       const parsedInput = proc.input.parse(input);
       return proc.resolve({ input: parsedInput });
     },

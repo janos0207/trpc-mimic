@@ -1,20 +1,27 @@
-import { z, ZodType, ZodTypeAny } from "zod";
+import { z, ZodTypeAny } from "zod";
+import { ProcedureDef } from "./router";
 
 export function procedure() {
-  let inputSchema: ZodTypeAny | null = null;
-  let handler: ((input: any) => any) | null = null;
-
   return {
-    input<T extends ZodTypeAny>(schema: T) {
-      inputSchema = schema;
-      return this;
-    },
-    query(fn: (args: { input: any }) => any) {
-      handler = fn;
+    input<TInputSchema extends ZodTypeAny>(schema: TInputSchema) {
       return {
-        call(input: unknown) {
-          const parsed = inputSchema?.parse(input);
-          return handler!({ input: parsed });
+        query<TOutput>(
+          resolve: (opts: { input: z.infer<TInputSchema> }) => TOutput
+        ): ProcedureDef<z.infer<TInputSchema>, TOutput> {
+          return {
+            input: schema,
+            resolve,
+            type: "query",
+          };
+        },
+        mutation<TOutput>(
+          resolve: (opts: { input: z.infer<TInputSchema> }) => TOutput
+        ): ProcedureDef<z.infer<TInputSchema>, TOutput> {
+          return {
+            input: schema,
+            resolve,
+            type: "mutation",
+          };
         },
       };
     },
