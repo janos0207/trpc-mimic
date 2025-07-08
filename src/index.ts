@@ -4,6 +4,10 @@ import { procedure } from "./procedure";
 
 const router = createRouter()
   .procedure(
+    "ping",
+    procedure().mutation(() => "pong")
+  )
+  .procedure(
     "hello",
     procedure()
       .input(z.object({ name: z.string() }))
@@ -16,7 +20,12 @@ const router = createRouter()
       .mutation(({ input }) => input.x + input.y)
   );
 
-const result = router.call("hello", { name: "Yasu" });
-console.log(result);
-console.log(router.call("add", { x: 1, y: 2 }));
+router.call("ping", { input: {} });
+router.call("hello", { input: { name: "Yasu" } });
+// router.call("hello", { input: { x: 1 } });
+router.call("add", { input: { x: 1, y: 2 } });
 // router.call("unknown", {});  // Type Error
+
+const a = procedure()
+  .input(z.object({ name: z.string() }))
+  .query(({ input }) => `Hello, ${input.name}!`);

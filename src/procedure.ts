@@ -1,29 +1,29 @@
-import { z, ZodTypeAny } from "zod";
-import { ProcedureDef } from "./router";
+import { z, ZodTypeAny, ZodType } from "zod";
+import { ProcedureDef, ResolveArgs } from "./router";
 
-export function procedure() {
+export function procedure<TInputSchema extends ZodType>(schema?: TInputSchema) {
+  const inputSchema = (schema ?? z.void()) as TInputSchema;
+
   return {
-    input<TInputSchema extends ZodTypeAny>(schema: TInputSchema) {
-      return {
-        query<TOutput>(
-          resolve: (opts: { input: z.infer<TInputSchema> }) => TOutput
-        ): ProcedureDef<z.infer<TInputSchema>, TOutput> {
-          return {
-            input: schema,
-            resolve,
-            type: "query",
-          };
-        },
-        mutation<TOutput>(
-          resolve: (opts: { input: z.infer<TInputSchema> }) => TOutput
-        ): ProcedureDef<z.infer<TInputSchema>, TOutput> {
-          return {
-            input: schema,
-            resolve,
-            type: "mutation",
-          };
-        },
-      };
+    input<TNewInputSchema extends ZodType>(new_schema: TNewInputSchema) {
+      return procedure<TNewInputSchema>(new_schema);
     },
+    query: makeProcedure<TInputSchema>("query", inputSchema),
+    mutation: makeProcedure<TInputSchema>("mutation", inputSchema),
+  };
+}
+
+function makeProcedure<TInputSchema extends ZodType>(
+  type: "query" | "mutation",
+  schema: TInputSchema
+) {
+  return function <TOutput>(
+    fn: (args: ResolveArgs<TInputSchema>) => TOutput
+  ): ProcedureDef<TInputSchema, TOutput> {
+    return {
+      input: schema,
+      resolve: fn,
+      type: type,
+    };
   };
 }

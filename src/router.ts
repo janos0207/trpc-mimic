@@ -1,29 +1,36 @@
-import { z, ZodTypeAny } from "zod";
+import { z, ZodAny, ZodTypeAny, ZodUndefined, ZodVoid } from "zod";
 
-export type ProcedureDef<TInput = any, TOutput = any> = {
-  input: ZodTypeAny;
-  resolve: (args: { input: TInput }) => TOutput;
+export type ResolveArgs<T extends ZodTypeAny> = [T] extends [ZodVoid]
+  ? {}
+  : { input: z.infer<T> };
+
+export type ProcedureDef<
+  TInputSchema extends ZodTypeAny | ZodVoid,
+  TOutput = any
+> = {
+  input: TInputSchema;
+  resolve: (args: ResolveArgs<TInputSchema>) => TOutput;
   type: "query" | "mutation";
 };
 
-type ProcedureMap = Record<string, ProcedureDef>;
+type ProcedureMap = Record<string, ProcedureDef<any, any>>;
 
-type Router<P extends ProcedureMap> = {
-  procedure: <K extends string, D extends ProcedureDef>(
+export type Router<P extends Record<string, ProcedureDef<any, any>>> = {
+  procedure: <K extends string, D extends ProcedureDef<any, any>>(
     name: K,
     def: D
   ) => Router<P & { [Key in K]: D }>;
-  call: <K extends keyof P>(
+  call: <K extends keyof P, InputSchema extends z.infer<P[K]["input"]>>(
     name: K,
-    input: unknown
+    args: [P[K]["input"]] extends [ZodVoid] ? {} : { input: InputSchema }
   ) => ReturnType<P[K]["resolve"]>;
 };
 
-function createRouterWith<P extends Record<string, ProcedureDef>>(
+function createRouterWith<P extends Record<string, ProcedureDef<any, any>>>(
   procedures: P
 ): Router<P> {
   return {
-    procedure<Name extends keyof P, Def extends ProcedureDef>(
+    procedure<Name extends keyof P, Def extends ProcedureDef<any, any>>(
       name: Name,
       def: Def
     ): Router<P & { [K in Name]: Def }> {
@@ -33,16 +40,18 @@ function createRouterWith<P extends Record<string, ProcedureDef>>(
       } as P & { [K in Name]: Def };
       return createRouterWith(next_procedures);
     },
-    call<K extends keyof P>(
+    call<K extends keyof P, InputSchema extends z.infer<P[K]["input"]>>(
       name: K,
-      input: Parameters<P[K]["resolve"]>[0]["input"]
+      args: [P[K]["input"]] extends [ZodVoid] ? {} : { input: InputSchema }
     ): ReturnType<P[K]["resolve"]> {
       const proc = procedures[name];
       if (!proc) throw new Error(`Procedure "${String(name)}" not found`);
       console.log(`Calling [${proc.type}] procedure: ${String(name)}`);
 
-      const parsedInput = proc.input.parse(input);
-      return proc.resolve({ input: parsedInput });
+      if (proc.input instanceof ZodVoid) {
+        return proc.resolve({});
+      }
+      return proc.resolve(args);
     },
   };
 }
