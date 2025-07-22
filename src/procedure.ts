@@ -1,11 +1,13 @@
-import { z, ZodTypeAny, ZodType } from "zod";
+import { z, ZodTypeAny } from "zod";
 import { ProcedureDef, ResolveArgs } from "./router";
 
-export function procedure<TInputSchema extends ZodType>(schema?: TInputSchema) {
+export function procedure<TInputSchema extends ZodTypeAny>(
+  schema?: TInputSchema
+) {
   const inputSchema = (schema ?? z.void()) as TInputSchema;
 
   return {
-    input<TNewInputSchema extends ZodType>(new_schema: TNewInputSchema) {
+    input<TNewInputSchema extends ZodTypeAny>(new_schema: TNewInputSchema) {
       return procedure<TNewInputSchema>(new_schema);
     },
     query: makeProcedure<TInputSchema>("query", inputSchema),
@@ -13,7 +15,7 @@ export function procedure<TInputSchema extends ZodType>(schema?: TInputSchema) {
   };
 }
 
-function makeProcedure<TInputSchema extends ZodType>(
+function makeProcedure<TInputSchema extends ZodTypeAny>(
   type: "query" | "mutation",
   schema: TInputSchema
 ) {

@@ -1,4 +1,4 @@
-import { z, ZodAny, ZodTypeAny, ZodUndefined, ZodVoid } from "zod";
+import { z, ZodTypeAny, ZodVoid } from "zod";
 
 export type ResolveArgs<T extends ZodTypeAny> = [T] extends [ZodVoid]
   ? {}
@@ -15,7 +15,7 @@ export type ProcedureDef<
 
 type ProcedureMap = Record<string, ProcedureDef<any, any>>;
 
-export type Router<P extends Record<string, ProcedureDef<any, any>>> = {
+export type Router<P extends ProcedureMap> = {
   procedure: <K extends string, D extends ProcedureDef<any, any>>(
     name: K,
     def: D
@@ -26,9 +26,7 @@ export type Router<P extends Record<string, ProcedureDef<any, any>>> = {
   ) => ReturnType<P[K]["resolve"]>;
 };
 
-function createRouterWith<P extends Record<string, ProcedureDef<any, any>>>(
-  procedures: P
-): Router<P> {
+function createRouterWith<P extends ProcedureMap>(procedures: P): Router<P> {
   return {
     procedure<Name extends keyof P, Def extends ProcedureDef<any, any>>(
       name: Name,

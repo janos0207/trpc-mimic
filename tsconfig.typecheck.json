@@ -1,0 +1,10 @@
+// tsconfig.typecheck.json
+{
+    "extends": "./tsconfig.json",
+    "include": ["tests/**/*.ts"], // or "*.test-d.ts"などのみに絞る
+    "compilerOptions": {
+      "noEmit": true,
+      "strict": true
+    }
+  }
+  
