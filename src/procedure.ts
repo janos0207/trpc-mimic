@@ -1,5 +1,5 @@
 import { z, ZodTypeAny } from "zod";
-import { ProcedureDef, ResolveArgs } from "./router";
+import { ProcedureDef, ResolveFn } from "./router";
 
 export function procedure<TInputSchema extends ZodTypeAny>(
   schema?: TInputSchema
@@ -20,7 +20,7 @@ function makeProcedure<TInputSchema extends ZodTypeAny>(
   schema: TInputSchema
 ) {
   return function <TOutput>(
-    fn: (args: ResolveArgs<TInputSchema>) => TOutput
+    fn: ResolveFn<TInputSchema, TOutput>
   ): ProcedureDef<TInputSchema, TOutput> {
     return {
       input: schema,

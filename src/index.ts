@@ -11,21 +11,21 @@ const router = createRouter()
     "hello",
     procedure()
       .input(z.object({ name: z.string() }))
-      .query(({ input }) => `Hello, ${input.name}!`)
+      .query((input) => `Hello, ${input.name}!`)
   )
   .procedure(
     "add",
     procedure()
       .input(z.object({ x: z.number(), y: z.number() }))
-      .mutation(({ input }) => input.x + input.y)
+      .mutation((input) => input.x + input.y)
   );
 
-router.call("ping", { input: {} });
-router.call("hello", { input: { name: "Yasu" } });
+router.call("ping");
+router.call("hello", { name: "Yasu" });
 // router.call("hello", { input: { x: 1 } });
-router.call("add", { input: { x: 1, y: 2 } });
+router.call("add", { x: 1, y: 2 });
 // router.call("unknown", {});  // Type Error
 
 const a = procedure()
   .input(z.object({ name: z.string() }))
-  .query(({ input }) => `Hello, ${input.name}!`);
+  .query((input) => `Hello, ${input.name}!`);
